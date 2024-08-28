@@ -30,7 +30,7 @@ def tip2gene(tip):
 
 def print_assignment_group(tree_name, subtree, assignment):
     for tip in subtree:
-        if 'grc' in tip.name: # failing with OG0001314
+        if 'grc' in tip.name:
             sp = tip2sp_name(tip)
             gene = tip2gene(tip)
             branch_length = str(tip.branch_length)
@@ -67,17 +67,7 @@ def tree2assigments(input_newick):
         sys.stderr.write(tree_name + ': Outgroup (' + outgroup + ') absent\n')
         sys.stdout.write("\t".join([tree_name, 'NA', 'NA', 'other', 'NA']) + '\n')
         return(0)
-    
-    if len(sp2node_name['sciaridae']) == 0:
-        sys.stderr.write(tree_name + ': No sciaridae\n')
-        sys.stdout.write("\t".join([tree_name, 'NA', 'NA', 'other', 'NA']) + '\n')
-        return(0)
-        
-    if len(sp2node_name['cecidomyiidae']) == 0:
-        sys.stderr.write(tree_name + ': No cecidomyiidae\n')
-        sys.stdout.write("\t".join([tree_name, 'NA', 'NA', 'other', 'NA']) + '\n')
-        return(0)
-    
+
     outgroup_node = sp2node_name[outgroup][0]
     tree.root_with_outgroup(outgroup_node)
     
@@ -116,23 +106,18 @@ def tree2assigments(input_newick):
 
 
 # input_dir = sys.argv[1]
-# input_dir = 'data/testing_trees'
+input_dir = 'data/testing_trees'
 # tree_files = [i for i in os.listdir(input_dir) if i.endswith('treefile')]
-# tree_files = os.listdir('data/testing_trees/')
-# tree_files = os.listdir(input_dir)
-input_tree = sys.argv[1]
+tree_files = os.listdir('data/testing_trees/')
 
 # with open('tables/L-busco-phylogenies-summary.tsv', 'w') as tab:
 sys.stdout.write('orthogroup\tspecies\tgene\tclassification\tbranch_lengths\n')
 
-#for file in tree_files:
-    #sys.stdout.write(file)
-    #sys.stdout.write("\n")
+for file in tree_files:
     # file = 'OG0003003_tree.txt'
     # print(file)
-    # input_newick = input_dir + '/' + file
-input_newick = input_tree
-tree2assigments(input_newick)
+    input_newick = input_dir + '/' + file
+    tree2assigments(input_newick)
     # sys.stdout.write(gene + '\t' + tree2assigments(input_newick) + '\n')
 
 
