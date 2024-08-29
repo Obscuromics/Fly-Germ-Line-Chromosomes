@@ -1,5 +1,4 @@
-import os
-from collections import defaultdict
+from os import listdir
 from Bio import Phylo
 import sys
 
@@ -7,16 +6,33 @@ import sys
 input_dir = sys.argv[1]
 # input_dir = 'data/testing_trees_busco'
 
-output_pattern = sys.argv[2] # will generate *_per_tree_summary.tsv and *_per_gene_summary.tsv
-output_pattern = 'data/busco'
-# meta_information_table = sys.argv[3]
+output_pattern = sys.argv[2] # will generate <output_pattern>_per_tree_summary.tsv and <output_pattern>_per_gene_summary.tsv
+# output_pattern = 'data/busco'
 
+meta_information_table_filename = sys.argv[3]
 
 ######### global constants
-# these will be picked up from a file taken as an argument (meta_information_table)
-outgroup = 'Sylvicola cinctus'
-sciaridae = set(['Bradysia odoriphaga', 'Pseudolycoriella hygida', 'Phytosciara flavipes', 'Trichosia splendens', 'Bradysia coprophila', 'Bradysia impatiens', 'Lycoriella ingenua'])
-cecidomyiidae = set(['Sitodiplosis mosellana', 'Mayetiola destructor', 'Obolodiplosis robiniae', 'Catotricha subobsoleta', 'Lestremia cinerea', 'Aphidoletes aphidimyza', 'Contarinia nasturtii', 'Resseliella maxima'])
+outgroup = set()
+sciaridae = set()
+cecidomyiidae = set()
+
+with open(meta_information_table_filename, 'r') as meta_information_table:
+    for line in meta_information_table:
+        sp, family, is_outgroup = line.rstrip('\n').split('\t')
+        if is_outgroup == 'yes':
+            outgroup.add(sp)
+        if family == 'Cecidomyiidae':
+            cecidomyiidae.add(sp)
+        if family == 'Sciaridae':
+            sciaridae.add(sp)
+
+sys.stderr.write("Outgroup: " + "\t".join(outgroup) + '\n')
+sys.stderr.write("Sciaridae: " + "\t".join(sciaridae) + '\n')
+sys.stderr.write("Cecidomyiidae: " + "\t".join(cecidomyiidae) + '\n')
+
+# outgroup = 'Sylvicola cinctus'
+# sciaridae = set(['Bradysia odoriphaga', 'Pseudolycoriella hygida', 'Phytosciara flavipes', 'Trichosia splendens', 'Bradysia coprophila', 'Bradysia impatiens', 'Lycoriella ingenua'])
+# cecidomyiidae = set(['Sitodiplosis mosellana', 'Mayetiola destructor', 'Obolodiplosis robiniae', 'Catotricha subobsoleta', 'Lestremia cinerea', 'Aphidoletes aphidimyza', 'Contarinia nasturtii', 'Resseliella maxima'])
 
 ############ FUNCTIONS
 
@@ -60,7 +76,7 @@ def grc_tip2sp_scf_loc(tip):
 
 ######### file manipulation bit
 
-tree_files = [i for i in os.listdir(input_dir) if i.endswith('treefile')]
+tree_files = [i for i in listdir(input_dir) if i.endswith('treefile')]
 
 # tree_summary = 'summary_all_trees.tsv'
 # GRC_genes_summary = 'phylogenetic_placement_of_all_grc_genes.tsv'
@@ -95,14 +111,12 @@ with open(tree_summary_filename, 'w') as tree_summary, open(gene_summary_filenam
             tree.root_with_outgroup(outgroup_tips) # root the tree by that outgroup
         
         ### preprocessing
-        # sp2tips = defaultdict(list) # I don't think I need this in the end
         present_sciaridae = set()
         present_cecidomyiidae = set()
         present_GRCs = set()
         total_tips = str(len(tree.get_terminals())) ## 2
         for tip in tree.get_terminals():
             sp_name = tip2species_name(tip)
-            # sp2tips[sp_name].append(tip)
             if is_grc(tip):
                 present_GRCs.add(tip)
             elif sp_name in sciaridae:
@@ -111,18 +125,21 @@ with open(tree_summary_filename, 'w') as tree_summary, open(gene_summary_filenam
                 present_cecidomyiidae.add(tip)
                 
         ######### Per Gene summary
-        monophyletic_sci = is_monophyletic_sciaridae(tree.common_ancestor(present_sciaridae)) ## 3
-        monophyletic_ceci = is_monophyletic_cecidomyiidae(tree.common_ancestor(present_cecidomyiidae)) ## 4
+        sciaridae_ancestor = tree.common_ancestor(present_sciaridae)
+        cecidomyiidae_ancestor = tree.common_ancestor(present_cecidomyiidae)
+
+        monophyletic_sci = is_monophyletic_sciaridae(sciaridae_ancestor) ## 3
+        monophyletic_ceci = is_monophyletic_cecidomyiidae(cecidomyiidae_ancestor) ## 4
 
         GRCs_total = str(len(present_GRCs))
         GRC_species = ','.join(set([tip2short_name(tip) for tip in present_GRCs]))
-        GRCs_sci = str(count_grcs(tree.common_ancestor(present_sciaridae))) if monophyletic_sci else 'NA'
-        GRCs_ceci = str(count_grcs(tree.common_ancestor(present_cecidomyiidae))) if monophyletic_ceci else 'NA'
+        GRCs_sci = str(count_grcs(sciaridae_ancestor)) if monophyletic_sci else 'NA'
+        GRCs_ceci = str(count_grcs(cecidomyiidae_ancestor)) if monophyletic_ceci else 'NA'
 
         row_to_print = '\t'.join([BUSCO_id, total_tips, str(monophyletic_sci), str(monophyletic_ceci), GRC_species, GRCs_total, GRCs_sci, GRCs_ceci]) + '\n'
         tree_summary.write(row_to_print)
 
-        ######### Per branch summary
+        ######### Per gene summary
         for grc in present_GRCs:
             sys.stderr.write('\t\t' + grc.name + '\n')
             sp, chrom, loc = grc_tip2sp_scf_loc(grc) ### 2,3,4 of the reported values: species, chromsome, location
