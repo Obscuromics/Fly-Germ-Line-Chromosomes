@@ -148,12 +148,16 @@ with open(tree_summary_filename, 'w') as tree_summary, open(gene_summary_filenam
             grc_bootstraps = []
 
             for target_node in grc2root: # target_node is is the last common ancestor (node) of the GRC gene and any non-GRC gene
-                non_grc_bootstraps.append(target_node.name) # this will record the whole line of bootstraps
+                if target_node.name: 
+                    non_grc_bootstraps.append(target_node.name) # this will record the whole line of bootstraps
                 if not is_just_grcs(target_node): # breaks on the fist node with non-GRC ancestors OR at the root
                     break
             non_grc_ancestor = target_node 
             closest_non_grc_relatives = ';'.join([tip2short_name(tip) for tip in non_grc_ancestor.get_terminals() if not is_grc(tip)]) ### 7
-            closest_non_grc_relatives_bs = ';'.join(non_grc_bootstraps) ### 8
+            if non_grc_bootstraps:
+                closest_non_grc_relatives_bs = ';'.join(non_grc_bootstraps) ### 8
+            else:
+                closest_non_grc_relatives_bs = 'NA'
 
             for target_node in grc2root: # target_node is is the last common ancestor (node) of the GRC gene and any other GRC gene
                 if target_node.name:
@@ -162,7 +166,10 @@ with open(tree_summary_filename, 'w') as tree_summary, open(gene_summary_filenam
                     break
             grc_ancestor = target_node 
             closest_grc_relatives = ';'.join([tip2short_name(tip) for tip in grc_ancestor.get_terminals() if is_grc(tip) and not tip == grc]) ### 5
-            closest_grc_relatives_bs = ';'.join(grc_bootstraps) ### 6
+            if non_grc_bootstraps:
+                closest_grc_relatives_bs = ';'.join(grc_bootstraps) ### 6
+            else:
+                closest_grc_relatives_bs = 'NA'
             
             row_to_print = '\t'.join([BUSCO_id, sp, chrom, loc, closest_grc_relatives, closest_grc_relatives_bs, closest_non_grc_relatives, closest_non_grc_relatives_bs, str(grc.branch_length)]) + '\n'
             gene_summary.write(row_to_print)
