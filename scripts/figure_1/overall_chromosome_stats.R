@@ -136,13 +136,13 @@ all_sizes <- rbind(bcop_sizes, bimp_sizes, ling_sizes)
 
 ### --- read and process busco files --- ### 
 bcop_buscos <- generate_busco_stats(
-  file = file.path(home, data, "buscos/BraCopr_buscos.diptera_odb10.tsv"), 
+  file = file.path(home, data, "buscos/BraCopr_buscos.diptera_odb12.tsv"), 
   sizes = bcop_sizes, species = "Bcop", total_busco_number = diptera_total)
 bimp_buscos <- generate_busco_stats(
-  file = file.path(home, data, "buscos/BraImpa_buscos.diptera_odb10.tsv"), 
+  file = file.path(home, data, "buscos/BraImpa_buscos.diptera_odb12.tsv"), 
   sizes = bimp_sizes, species = "Bimp", total_busco_number = diptera_total)
 ling_buscos <- generate_busco_stats(
-  file = file.path(home, data, "buscos/LycInge_buscos.diptera_odb10.tsv"), 
+  file = file.path(home, data, "buscos/LycInge_buscos.diptera_odb12.tsv"), 
   sizes = ling_sizes, species = "Ling", total_busco_number = diptera_total)
 
 all_buscos <- rbind(bcop_buscos, bimp_buscos, ling_buscos)
