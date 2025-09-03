@@ -11,13 +11,15 @@ read_busco_file <- function(file_name, prefix, species, buscos_to_origin, chrom)
                  na.strings = c("", "NA"))[,c(0:6)]
   colnames(df) <- c("busco", "status", "chr", "start", "end", "strand")
   df <- df %>% filter(chr %in% chrom$chr)
+  #df <- df %>% filter(!busco %in% duplicated_buscos)
   buscos_to_origin <- buscos_to_origin %>% 
-    filter(sp == species) %>% select(busco, chr, start, end, origin)#, colour)
+    filter(sp == species) %>% select(busco, chr, start, end, origin)
   df <- left_join(df, buscos_to_origin)
-  #df[which(is.na(df$colour)), "colour"] <- "grey90"
-  #df <- df %>% na.omit() %>% arrange(chr) 
+  #duplicated_buscos <- df$busco[duplicated(df$busco)]
+  #df[which(df$busco %in% duplicated_buscos), "origin"] <- NA
   colnames(df) <- c('busco', 'status', chr_label, paste0(prefix, 'start'),
-                    paste0(prefix, 'end'), 'strand', 'origin')#, 'colour')
+                    paste0(prefix, 'end'), 'strand', 'origin')
+  
   return(df)
 }
 ################################################################################
@@ -39,23 +41,7 @@ origin <- read.table(
   sep = "\t", header = TRUE)[,c(0:5)]
 
 origin[c("sp", "chr")] <- str_split_fixed(origin$spchr, "_", 2)
-#origin[which(origin$origin == "Sciaridae"), "col"] <- "#4CCEAF"
-#origin[which(origin$origin == "Cecidomyiidae"), "col"] <- "#CE8EDA"
-colnames(origin) <- c("busco", "spchr", "start", "end", "origin",
-                      "sp", "chr")#, "colour")
-
-# remove busco genes that have different origin
-#origin_flt <- NULL
-#diff_origin <- NULL
-
-#for(busco in unique(origin$busco)){
-#  df <- origin[origin$busco == busco,]
-#  if(length(unique(df$origin)) == 1){
-#    origin_flt <- rbind(origin_flt, df)
-#  }else{
-#    diff_origin <- rbind(diff_origin, df)
-#  }
-#}
+colnames(origin) <- c("busco", "spchr", "start", "end", "origin", "sp", "chr")
 
 # read busco and chromosome files and make alignments
 busco_list <- file.path(home, data, "buscos", busco_files)
@@ -84,7 +70,6 @@ max_ends <- list()
 # save ref as temp_ref
 temp_ref_chroms <- ref_chroms
 temp_ref_df <- ref_df
-
 
 for (file in busco_list[-1]){
   i <- match(file, busco_list)
@@ -161,6 +146,9 @@ for (file in busco_list[-1]){
     alignments[which(alignments$origin.x == alignments$origin.y &  
                        alignments$origin.x == "Cecidomyiidae"), "colour"] <- "#CE8EDA"
     
+    duplicated_buscos <- alignments$busco[duplicated(alignments$busco)]
+    alignments[which(alignments$busco %in% duplicated_buscos), "colour"] <- NA
+    
     busco_to_origin <- alignments[, c("busco", "colour")]
     busco_to_origin[which(is.na(busco_to_origin$colour)), "colour"] <- "grey90"
     #busco_to_origin$colour <- adjustcolor(busco_to_origin$colour, alpha.f = 0.8)
@@ -236,6 +224,9 @@ for (file in busco_list[-1]){
     
     alignments[which(alignments$origin.x == alignments$origin.y &  
                        alignments$origin.x == "Cecidomyiidae"), "colour"] <- "#CE8EDA"
+    
+    duplicated_buscos <- alignments$busco[duplicated(alignments$busco)]
+    alignments[which(alignments$busco %in% duplicated_buscos), "colour"] <- NA
     
     busco_to_origin <- alignments[, c("busco", "colour")]
     busco_to_origin[which(is.na(busco_to_origin$colour)), "colour"] <- "grey90"
