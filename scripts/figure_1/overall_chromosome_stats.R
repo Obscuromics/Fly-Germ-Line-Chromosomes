@@ -116,7 +116,7 @@ chrom_annot_list <- c(
   "Ling_SUPER_1", "Ling_SUPER_2", "Ling_SUPER_3", "Ling_SUPER_X", 
   "Ling_SUPER_GRC1", "Ling_SUPER_GRC2")
 
-diptera_total <- 3285
+diptera_total <- 4867
 ################################################################################
 # Prepare tables
 ### --- read chromosome sizes --- ###
@@ -214,7 +214,7 @@ plt_sizes <- ggplot(all_sizes) +
 
 ### --- buscos -- ###
 
-BUSCO_colors <-c("Fragmented" = "#e69f00", "Duplicated" = "#56b4e9", "Complete" = "#cc79a7")
+BUSCO_colors <-c("Fragmented" = "#ffdd55ff", "Duplicated" = "#56b4e9", "Complete" = "#cc79a7")
 
 plt_buscos <- ggplot(all_buscos) +
   geom_col(aes(x = count, y = factor(chrom_annot, rev(chrom_annot_list)), fill = forcats::fct_rev(status))) + 
