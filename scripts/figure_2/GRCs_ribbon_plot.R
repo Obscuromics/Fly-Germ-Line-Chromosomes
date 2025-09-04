@@ -10,13 +10,23 @@ read_busco_file <- function(file_name, prefix, species, buscos_to_origin, chrom)
   df <- read.csv(file_name, sep = '\t', comment.char = '#', header = FALSE,
                  na.strings = c("", "NA"))[,c(0:6)]
   colnames(df) <- c("busco", "status", "chr", "start", "end", "strand")
-  df <- df %>% filter(chr %in% chrom$chr)
-  #df <- df %>% filter(!busco %in% duplicated_buscos)
+  
+  # swap start and end for buscos on "-" strand
+  df_new <- df %>% filter(strand == "+")
+  df_new <- rbind(
+    df_new, df %>% filter(strand == "-") %>% rename(start = end, end = start)) %>%
+    arrange(chr, start)
+  df <- df_new
+  
+  # merge buscos with origin
   buscos_to_origin <- buscos_to_origin %>% 
     filter(sp == species) %>% select(busco, chr, start, end, origin)
   df <- left_join(df, buscos_to_origin)
+  
+  # filter for duplicated genes
   #duplicated_buscos <- df$busco[duplicated(df$busco)]
   #df[which(df$busco %in% duplicated_buscos), "origin"] <- NA
+  
   colnames(df) <- c('busco', 'status', chr_label, paste0(prefix, 'start'),
                     paste0(prefix, 'end'), 'strand', 'origin')
   
