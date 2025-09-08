@@ -3,13 +3,14 @@ from Bio import Phylo
 import sys
 
 # this should be probably argparse object (package for named arguements), for now making it quick and dirty using sys
-input_dir = sys.argv[1]
-# input_dir = 'data/testing_trees_busco'
+# input_dir = sys.argv[1]
+input_dir = 'data/testing_trees_busco'
 
-output_pattern = sys.argv[2] # will generate <output_pattern>_per_tree_summary.tsv and <output_pattern>_per_gene_summary.tsv
-# output_pattern = 'data/busco'
+# output_pattern = sys.argv[2] # will generate <output_pattern>_per_tree_summary.tsv and <output_pattern>_per_gene_summary.tsv
+output_pattern = 'data/busco'
 
-meta_information_table_filename = sys.argv[3]
+# meta_information_table_filename = sys.argv[3]
+meta_information_table_filename = 'tables/bibionomorpha_table.tsv'
 
 ######### global constants
 outgroup = set()
@@ -44,6 +45,15 @@ def is_just_grcs(clade):
 
 def is_monophyletic_sciaridae(clade):
     return(all([tip2species_name(tip) in sciaridae for tip in clade.get_terminals()]))
+
+def breaking_monophyly_sciaridae(present_sciaridae):
+    naughty_list = []
+    for exl in range(len(present_sciaridae)):
+        testing_subset = [tip for i, tip in enumerate(present_sciaridae) if i !=  exl]
+        common_anc = tree.common_ancestor(testing_subset)
+        if is_monophyletic_sciaridae(common_anc):
+            return(present_sciaridae[exl])
+    return('')
 
 def is_monophyletic_cecidomyiidae(clade):
     return(all([tip2species_name(tip) in cecidomyiidae or is_grc(tip) for tip in clade.get_terminals()]))
@@ -94,7 +104,7 @@ with open(tree_summary_filename, 'w') as tree_summary, open(gene_summary_filenam
     sys.stderr.write('Running the classification analysis of ...\n')
 
     ### headers
-    row_to_print = 'BUSCO_id\ttotal_genes\tmonophyletic_sci\tmonophyletic_ceci\tGRC_species\tGRCs_total\tGRCs_sci\tGRCs_ceci\n)'
+    row_to_print = 'BUSCO_id\ttotal_genes\tmonophyletic_sci\tmonophyletic_ceci\tGRC_species\tGRCs_total\tGRCs_sci\tGRCs_ceci\tBreaking_sci_monophyly\n)'
     tree_summary.write(row_to_print)
     row_to_print = 'BUSCO_id\tsp\tchromosome\tlocation\tGRC_closest_relative\tGRC_bootstrap\tnon-GRC_closest_relative\tnon-GRC_bootstrap\tbranch_length\n)'
     gene_summary.write(row_to_print)
@@ -129,6 +139,12 @@ with open(tree_summary_filename, 'w') as tree_summary, open(gene_summary_filenam
         cecidomyiidae_ancestor = tree.common_ancestor(present_cecidomyiidae)
 
         monophyletic_sci = is_monophyletic_sciaridae(sciaridae_ancestor) ## 3
+        if not monophyletic_sci:
+            breaking_monophyly = breaking_monophyly_sciaridae(list(present_sciaridae)) ## 3
+        else:
+            breaking_monophyly = ''
+        
+        # print('Baad tip: ' + str(breaking_monophyly))
         monophyletic_ceci = is_monophyletic_cecidomyiidae(cecidomyiidae_ancestor) ## 4
 
         GRCs_total = str(len(present_GRCs))
@@ -136,7 +152,7 @@ with open(tree_summary_filename, 'w') as tree_summary, open(gene_summary_filenam
         GRCs_sci = str(count_grcs(sciaridae_ancestor)) if monophyletic_sci else 'NA'
         GRCs_ceci = str(count_grcs(cecidomyiidae_ancestor)) if monophyletic_ceci else 'NA'
 
-        row_to_print = '\t'.join([BUSCO_id, total_tips, str(monophyletic_sci), str(monophyletic_ceci), GRC_species, GRCs_total, GRCs_sci, GRCs_ceci]) + '\n'
+        row_to_print = '\t'.join([BUSCO_id, total_tips, str(monophyletic_sci), str(monophyletic_ceci), GRC_species, GRCs_total, GRCs_sci, GRCs_ceci, str(breaking_monophyly)]) + '\n'
         tree_summary.write(row_to_print)
 
         ######### Per gene summary
