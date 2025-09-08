@@ -3,14 +3,14 @@ from Bio import Phylo
 import sys
 
 # this should be probably argparse object (package for named arguements), for now making it quick and dirty using sys
-# input_dir = sys.argv[1]
-input_dir = 'data/testing_trees_busco'
+input_dir = sys.argv[1]
+# input_dir = 'data/testing_trees_busco'
 
-# output_pattern = sys.argv[2] # will generate <output_pattern>_per_tree_summary.tsv and <output_pattern>_per_gene_summary.tsv
-output_pattern = 'data/busco'
+output_pattern = sys.argv[2] # will generate <output_pattern>_per_tree_summary.tsv and <output_pattern>_per_gene_summary.tsv
+# output_pattern = 'data/busco'
 
-# meta_information_table_filename = sys.argv[3]
-meta_information_table_filename = 'tables/bibionomorpha_table.tsv'
+meta_information_table_filename = sys.argv[3]
+# meta_information_table_filename = 'tables/bibionomorpha_table.tsv'
 
 ######### global constants
 outgroup = set()
