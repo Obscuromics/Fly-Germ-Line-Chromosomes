@@ -104,9 +104,9 @@ with open(tree_summary_filename, 'w') as tree_summary, open(gene_summary_filenam
     sys.stderr.write('Running the classification analysis of ...\n')
 
     ### headers
-    row_to_print = 'BUSCO_id\ttotal_genes\tmonophyletic_sci\tmonophyletic_ceci\tGRC_species\tGRCs_total\tGRCs_sci\tGRCs_ceci\tBreaking_sci_monophyly\n)'
+    row_to_print = 'BUSCO_id\ttotal_genes\tmonophyletic_sci\tmonophyletic_ceci\tGRC_species\tGRCs_total\tGRCs_sci\tGRCs_ceci\tBreaking_sci_monophyly\n'
     tree_summary.write(row_to_print)
-    row_to_print = 'BUSCO_id\tsp\tchromosome\tlocation\tGRC_closest_relative\tGRC_bootstrap\tnon-GRC_closest_relative\tnon-GRC_bootstrap\tbranch_length\n)'
+    row_to_print = 'BUSCO_id\tsp\tchromosome\tlocation\tGRC_closest_relative\tGRC_bootstrap\tnon-GRC_closest_relative\tnon-GRC_bootstrap\tbranch_length\n'
     gene_summary.write(row_to_print)
 
     for tree_file in tree_files:
