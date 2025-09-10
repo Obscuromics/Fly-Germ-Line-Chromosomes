@@ -169,11 +169,11 @@ figures <- "figures"
 teal <- rgb(76, 206, 175, maxColorValue = 255)
 magenta <- rgb(206, 142, 218, maxColorValue = 255)
 
-target_species <- "Bcop"
-target_chrom2plot <- c("SUPER_GRC1")
+target_species <- "Bimp"
+target_chrom2plot <- c("SUPER_1", "SUPER_2", "SUPER_3", "SUPER_X")
 
-query_species <- "Ling"
-query_chrom2plot <- c("SUPER_GRC2")
+query_species <- "Bimp"
+query_chrom2plot <- c("SUPER_GRC")
 
 chrom_files <- c("idBraCopr2.1.chrom_sizes.tsv",
                  "idBraImpa2.1.primary.chrom_sizes.tsv",
@@ -189,7 +189,7 @@ busco_files <- c("BraCopr_buscos.diptera_odb10.tsv",
 busco_list <- file.path(home, data, "buscos", busco_files)
 names(busco_list) <- c("Bcop", "Bimp", "Ling")
 
-alignment_file <- "alignments/Bcop_Ling.m.1aln.paf"
+alignment_file <- "alignments/Bimp_Bimp.m.1aln.paf"
 ################################################################################
 ### --- load paf alignment --- ###
 ali <- load_paf_file(
@@ -254,37 +254,12 @@ origin <- read.table(
 origin[c("sp", "chr")] <- str_split_fixed(origin$spchr, "_", 2)
 colnames(origin) <- c("busco", "spchr", "start", "end", "origin", "sp", "chr")
 
-buscos <- list()
-for(sp in c(target_species, query_species)){
-  buscos[[sp]] <- read_busco_file(
-    file_name = busco_list[[sp]], species = sp, 
-    buscos_to_origin = origin, chrom_list = chrom_list)
-}
-
-# transform busco coordinates of the target to linear format
-t_buscos <- buscos[[target_species]] %>%
-  filter(chrom %in% target_chrom2plot) %>%
-  arrange(chrom, start)
-
-chr_offset <- 0
-t_buscos_lin <- NULL
-for(i in unique(t_buscos$chrom)){
-  df <- t_buscos[t_buscos$chrom == i,]
-  size <- unique(df$chrom_size)
-  
-  # calculate linear coordinates
-  df$linear_start <- chr_offset + df$start
-  df$linear_end <- chr_offset + df$end
-  
-  # bind with the main df
-  t_buscos_lin <- rbind(t_buscos_lin, df)
-  
-  # change chr offset
-  chr_offset <- chr_offset + size
-}
+buscos <- read_busco_file(
+  file_name = busco_list[[query_species]], species = query_species, 
+  buscos_to_origin = origin, chrom_list = chrom_list)
 
 # transform busco coordinates of the query to linear format
-q_buscos <- buscos[[query_species]] %>%
+q_buscos <- buscos %>%
   filter(chrom %in% query_chrom2plot) %>%
   arrange(chrom, start)
 
@@ -307,31 +282,6 @@ for(i in unique(q_buscos$chrom)){
 }
 
 ### -- plotting buscos with origin --- ###
-# target
-if(nrow(chr_info_t) == 1){
-  chr_info_t$cum_start <- 0
-}else{
-  chr_info_t$cum_start <- c(0, chr_info_t$cum_end[1:nrow(chr_info_t)-1])
-}
-
-for(i in chr_info_t$target){
-  df <- chr_info_t[chr_info_t$target == i,]
-  df_buscos <- t_buscos_lin[t_buscos_lin$chrom == i,]
-  
-  # plot buscos
-  p <- p + annotate(
-    "rect", xmin = df_buscos$linear_start, xmax = df_buscos$linear_end,
-    ymin = -3000000, ymax = -1000, 
-    colour = df_buscos$colour, fill = df_buscos$colour, linewidth = 0.3)
-  
-  p <- p + annotate(
-    "rect", xmin = df$cum_start, xmax = df$cum_end,
-    ymin = -3000000, ymax = -1000, 
-    colour = "black", fill = NA, linewidth = 0.3)
-  
-}
-
-# query
 if(nrow(chr_info_q) == 1){
   chr_info_q$cum_start <- 0
 }else{
@@ -345,12 +295,12 @@ for(i in chr_info_q$query){
   # plot buscos
   p <- p + annotate(
     "rect", ymin = df_buscos$linear_start, ymax = df_buscos$linear_end,
-    xmin = -3000000, xmax = -1000, 
+    xmin = -7000000, xmax = -1000, 
     colour = df_buscos$colour, fill = df_buscos$colour, linewidth = 0.3)
   
   p <- p + annotate(
     "rect", ymin = df$cum_start, ymax = df$cum_end,
-    xmin = -3000000, xmax = -1000, 
+    xmin = -7000000, xmax = -1000, 
     colour = "black", fill = NA, linewidth = 0.3)
 }
 
