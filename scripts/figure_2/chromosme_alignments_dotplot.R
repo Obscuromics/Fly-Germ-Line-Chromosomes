@@ -204,7 +204,7 @@ p <- ggplot(ali_lin)  +
   aes(x = t_linear_start, y = q_linear_start, xend = t_linear_end, yend = q_linear_end)
 
 p <- p + geom_segment(lineend = "round", linewidth = 0.4) +
-  labs(x = target_species, y = query_species) +
+  labs(x = NULL, y = NULL) +
   theme_bw()
 
 # calculate breaks and labels positions
@@ -229,7 +229,7 @@ labels$target <- chr_info_t$target
 # add breaks and labels
 p <- p +
   scale_x_continuous(expand = c(0, 0), minor_breaks = NULL,
-                     breaks = breaks$target, labels = NULL, position = 'bottom',
+                     breaks = breaks$target, labels = NULL, position = 'top',
                      sec.axis = dup_axis(breaks=ticks$target, labels=labels$target))
 
 breaks$query <- c(0, chr_info_q$cum_end)
@@ -237,15 +237,13 @@ ticks$query <- calcLabelPosition(breaks$query)
 labels$query <- chr_info_q$query
 
 p <- p +
-  scale_y_continuous(guide = guide_axis(angle = -90), 
+  scale_y_continuous(guide = guide_axis(angle = 90), 
                      expand = c(0, 0), minor_breaks = NULL,
-                     breaks = breaks$query, labels = NULL, position = 'left',
+                     breaks = breaks$query, labels = NULL, position = 'right',
                      sec.axis = dup_axis(breaks=ticks$query, labels=labels$query)) +
   coord_fixed()
 
 p <- p + expand_limits(x = 0, y = 0) # force to plot from 0
-
-p
 ################################################################################
 # add chromosome coloured based on origin
 origin <- read.table(
@@ -309,6 +307,7 @@ for(i in unique(q_buscos$chrom)){
 ### -- plotting buscos with origin --- ###
 # target
 chr_info_t$cum_start <- c(0, chr_info_t$cum_end[1:nrow(chr_info_t)-1])
+chr_outlines <- NULL
 
 for(i in chr_info_t$target){
   df <- chr_info_t[chr_info_t$target == i,]
@@ -318,12 +317,12 @@ for(i in chr_info_t$target){
   p <- p + annotate(
     "rect", xmin = df_buscos$linear_start, xmax = df_buscos$linear_end,
     ymin = -3000000, ymax = -1000, 
-    colour = df_buscos$colour, fill = df_buscos$colour, size = 0.3)
+    colour = df_buscos$colour, fill = df_buscos$colour, linewidth = 0.3)
   
-  # plot chromosome outlines
-  #p <- p + geom_rect(aes(
-   # xmin = df$cum_start, xmax = df$cum_end,
-   # ymin = -5000000, ymax = -1000), colour = "black", fill = NA, size = 0.3)
+  p <- p + annotate(
+    "rect", xmin = df$cum_start, xmax = df$cum_end,
+    ymin = -3000000, ymax = -1000, 
+    colour = "black", fill = NA, linewidth = 0.3)
   
 }
 
@@ -338,13 +337,20 @@ for(i in chr_info_q$query){
   p <- p + annotate(
     "rect", ymin = df_buscos$linear_start, ymax = df_buscos$linear_end,
     xmin = -3000000, xmax = -1000, 
-    colour = df_buscos$colour, fill = df_buscos$colour, size = 0.3)
+    colour = df_buscos$colour, fill = df_buscos$colour, linewidth = 0.3)
   
-  # plot chromosome outlines
-  #p <- p + geom_rect(aes(
-   # ymin = df$cum_start, ymax = df$cum_end,
-   # xmin = -5000000, xmax = -1000), colour = "black", fill = NA, size = 0.3)
+  p <- p + annotate(
+    "rect", ymin = df$cum_start, ymax = df$cum_end,
+    xmin = -3000000, xmax = -1000, 
+    colour = "black", fill = NA, linewidth = 0.3)
 }
 
-ggsave(plot = p , filename = file.path(home, figures, "test.svg"), 
-       device = "svg")#, units = "cm", width = 100, height = 40)
+plt_file_name <- paste0(target_species, "2", 
+                        query_species, ".dotplot_with_buscos")
+
+ggsave(plot = p , filename = file.path(home, figures, paste0(plt_file_name, ".svg")), 
+       device = "svg")#, units = "cm", width = 7, height = 4)
+
+ggsave(plot = p , filename = file.path(home, figures, paste0(plt_file_name, ".png")), 
+       device = "png")#, units = "cm", width = 100, height = 40)
+p
