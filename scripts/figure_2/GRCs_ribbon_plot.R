@@ -14,7 +14,8 @@ read_busco_file <- function(file_name, prefix, species, buscos_to_origin, chrom)
   # swap start and end for buscos on "-" strand
   df_new <- df %>% filter(strand == "+")
   df_new <- rbind(
-    df_new, df %>% filter(strand == "-") %>% rename(start = end, end = start)) %>%
+    df_new, df %>% dplyr::filter(strand == "-") %>% 
+      dplyr::rename(start = end, end = start)) %>%
     arrange(chr, start)
   df <- df_new
   
@@ -112,9 +113,7 @@ show_outline = TRUE
 pdf(file.path(home, figures, "GRCs_ribbon_plot.pdf"))
 print('[+] Generating plot')
 plot(0,cex = 0, xlim = c(1, plot_length), 
-     #ylim = c(((gap+1)*-1*length(busco_list)*2),((gap+1)*length(busco_list)*2)),
      ylim = c(((gap+1)*-1*2*2*2),((gap+1)*2*2*2)),
-     #ylim = c(-40, 40),
      xlab = "", ylab = "", bty = "n", yaxt="n", xaxt="n")
 
 main_counter <- 1
@@ -163,15 +162,18 @@ for (file in busco_list[-1]){
     busco_to_origin[which(is.na(busco_to_origin$colour)), "colour"] <- "grey90"
     #busco_to_origin$colour <- adjustcolor(busco_to_origin$colour, alpha.f = 0.8)
     
+    y1 <- gap-y_offset-y_increment
+    y2 <- gap-y_offset
+    
     # plot lines with different/unknown origin
     aln_grey <- alignments[is.na(alignments$colour),]
-    plot_one_ref_chr(aln_grey, adjustment_length_R, adjustment_length_Q, y_offset, 
-                     busco_to_origin, lwd = 0.2)
+    plot_one_ref_chr(aln_grey, adjustment_length_R, adjustment_length_Q,
+                     y1, y2, busco_to_origin, lwd = 0.3)
     
     # plot lines with the same origin
     aln_col <- alignments[!is.na(alignments$colour),]
-    plot_one_ref_chr(aln_col, adjustment_length_R, adjustment_length_Q, y_offset, 
-                     busco_to_origin, lwd = 0.4)
+    plot_one_ref_chr(aln_col, adjustment_length_R, adjustment_length_Q, 
+                     y1, y2, busco_to_origin, lwd = 0.5)
     
     ### --- plotting reference chromosomes --- ###
     counter <- 0
@@ -209,13 +211,13 @@ for (file in busco_list[-1]){
       chr_buscos_NA <- chr_buscos[is.na(chr_buscos$origin),]
       rect(chr_buscos_NA$Rstart+adjustment_length_R, gap-y_offset,
            chr_buscos_NA$Rend+adjustment_length_R, gap-y_offset+2, 
-           col = "grey90", border = "grey90", lwd = 0.2)
+           col = "grey90", border = "grey90", lwd = 0.3)
       
       # plot buscos with known origin
       chr_buscos_org <- chr_buscos[!is.na(chr_buscos$origin),]
       rect(chr_buscos_org$Rstart+adjustment_length_R, gap-y_offset,
            chr_buscos_org$Rend+adjustment_length_R, gap-y_offset+2, 
-           col = chr_buscos_org$colour, border = chr_buscos_org$colour, lwd = 0.4)
+           col = chr_buscos_org$colour, border = chr_buscos_org$colour, lwd = 0.5)
       
       text(x = ((Rlast+Rfirst+1)/2)+adjustment_length_R, y = gap-y_offset, 
            label = ref_chroms[ref_chroms$chr == i,]$annot,
@@ -242,15 +244,18 @@ for (file in busco_list[-1]){
     busco_to_origin[which(is.na(busco_to_origin$colour)), "colour"] <- "grey90"
     #busco_to_origin$colour <- adjustcolor(busco_to_origin$colour, alpha.f = 0.8)
     
+    y1 <- gap-y_offset-y_increment
+    y2 <- gap-y_offset
+    
     # plot lines with different/unknown origin
     aln_grey <- alignments[is.na(alignments$colour),]
-    plot_one_ref_chr(aln_grey, adjustment_length_R, adjustment_length_Q, y_offset, 
-                     busco_to_origin, lwd = 0.2)
+    plot_one_ref_chr(aln_grey, adjustment_length_R, adjustment_length_Q, 
+                     y1, y2, busco_to_origin, lwd = 0.3)
     
     # plot lines with the same origin
     aln_col <- alignments[!is.na(alignments$colour),]
-    plot_one_ref_chr(aln_col, adjustment_length_R, adjustment_length_Q, y_offset, 
-                     busco_to_origin, lwd = 0.4)
+    plot_one_ref_chr(aln_col, adjustment_length_R, adjustment_length_Q, 
+                     y1, y2, busco_to_origin, lwd = 0.5)
     
     ### --- plotting reference chromosomes --- ###
     counter <- 0
@@ -288,13 +293,13 @@ for (file in busco_list[-1]){
       chr_buscos_NA <- chr_buscos[is.na(chr_buscos$origin),]
       rect(chr_buscos_NA$Rstart+adjustment_length_R, gap-y_offset,
            chr_buscos_NA$Rend+adjustment_length_R, gap-y_offset+2, 
-           col = "grey90", border = "grey90", lwd = 0.2)
+           col = "grey90", border = "grey90", lwd = 0.3)
       
       # plot buscos with known origin
       chr_buscos_org <- chr_buscos[!is.na(chr_buscos$origin),]
       rect(chr_buscos_org$Rstart+adjustment_length_R, gap-y_offset,
            chr_buscos_org$Rend+adjustment_length_R, gap-y_offset+2,
-           col = chr_buscos_org$colour, border = chr_buscos_org$colour, lwd = 0.4)
+           col = chr_buscos_org$colour, border = chr_buscos_org$colour, lwd = 0.5)
       
       text(x = ((Rlast+Rfirst+1)/2)+adjustment_length_R, y = gap-y_offset, 
            label = ref_chroms[ref_chroms$chr == i,]$annot,
@@ -337,13 +342,13 @@ for (file in busco_list[-1]){
       chr_buscos_NA <- chr_buscos[is.na(chr_buscos$origin),]
       rect(chr_buscos_NA$Qstart+adjustment_length_Q, 1-gap-y_offset-2,
            chr_buscos_NA$Qend+adjustment_length_Q, 1-gap-y_offset-2+2, 
-           col = "grey90", border = "grey90", lwd = 0.2)
+           col = "grey90", border = "grey90", lwd = 0.3)
       
       # plot buscos with known origin
       chr_buscos_org <- chr_buscos[!is.na(chr_buscos$origin),]
       rect(chr_buscos_org$Qstart+adjustment_length_Q, 1-gap-y_offset-2,
            chr_buscos_org$Qend+adjustment_length_Q, 1-gap-y_offset-2+2, 
-           col = chr_buscos_org$colour, border = chr_buscos_org$colour, lwd = 0.4)
+           col = chr_buscos_org$colour, border = chr_buscos_org$colour, lwd = 0.5)
       
       text(x = ((Qlast+Qfirst+1)/2)+adjustment_length_Q, y = 1-gap-y_offset, 
            label = query_chroms[query_chroms$chr == i,]$annot,
