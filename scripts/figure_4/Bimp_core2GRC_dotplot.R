@@ -152,16 +152,16 @@ read_busco_file <- function(file_name, species, buscos_to_origin, chrom_list){
   df <- left_join(df, chrom_sizes, by = c("chr" = "chrom", "sp" = "species"))
   
   # add colour
-  df[which(df$origin == "Sciaridae"), "colour"] <- "#4CCEAF"
-  df[which(df$origin == "Cecidomyiidae"), "colour"] <- "#CE8EDA"
-  df[which(df$origin == "Other"), "colour"] <- "#CE8EDA" <- "grey90"
+  df[which(df$origin == "Sciaridae"), "colour"] <- "#44AA99"
+  df[which(df$origin == "Cecidomyiidae"), "colour"] <- "#AA4499"
+  df[which(df$origin == "Other"), "colour"] <- "#AA4499" <- "grey90"
   
   colnames(df) <- c("busco", "status", "chrom", "start", 
                     "end", "strand", "origin", "sp", "chrom_size", "colour")
   return(df)
 }
 ################################################################################
-setwd("/Users/ab66/Documents/sanger_work/diptera/analysis_on_curated_genomes")
+#setwd("/Users/ab66/Documents/sanger_work/diptera/analysis_on_curated_genomes")
 home <- getwd()
 data <- "data"
 figures <- "figures"
@@ -182,9 +182,9 @@ chrom_files <- c("idBraCopr2.1.chrom_sizes.tsv",
 chrom_list <- file.path(home, data, "chrom_sizes", chrom_files)
 names(chrom_list) <- c("Bcop", "Bimp", "Ling")
 
-busco_files <- c("BraCopr_buscos.diptera_odb10.tsv",
-                 "BraImpa_buscos.diptera_odb10.tsv",
-                 "LycInge_buscos.diptera_odb10.tsv")
+busco_files <- c("BraCopr_buscos.diptera_odb12.tsv",
+                 "BraImpa_buscos.diptera_odb12.tsv",
+                 "LycInge_buscos.diptera_odb12.tsv")
 
 busco_list <- file.path(home, data, "buscos", busco_files)
 names(busco_list) <- c("Bcop", "Bimp", "Ling")
@@ -249,7 +249,7 @@ p <- p + expand_limits(x = 0, y = 0) # force to plot from 0
 ################################################################################
 # add chromosome coloured based on origin
 origin <- read.table(
-  file.path(home, data, "phylogeny/busco_grc_classification_odb10_diptera.tsv"),
+  file.path(home, data, "phylogeny/busco_grc_classification_odb12_diptera.tsv"),
   sep = "\t", header = TRUE)[,c(0:5)]
 origin[c("sp", "chr")] <- str_split_fixed(origin$spchr, "_", 2)
 colnames(origin) <- c("busco", "spchr", "start", "end", "origin", "sp", "chr")
