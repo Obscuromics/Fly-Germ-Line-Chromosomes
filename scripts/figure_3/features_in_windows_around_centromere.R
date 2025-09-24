@@ -114,58 +114,71 @@ read_gc_content <- function(file, intervals){
 
 ################################################################################
 # Main directories
-#home <- "/Users/ab66/Documents/sanger_work/diptera/analysis_on_curated_genomes"
+setwd("/Users/ab66/Documents/sanger_work/diptera/analysis_on_curated_genomes") 
 home <- getwd()
 data <- "data"
 figures <- "figures"
+
+species <- "Ling"
+################################################################################
+chrom_sizes_files <- c(
+  "Bcop" = "chrom_sizes/idBraCopr2.1.chrom_sizes.tsv",
+  "Bimp" = "chrom_sizes/idBraImpa2.1.primary.chrom_sizes.tsv",
+  "Ling" = "chrom_sizes/idLycInge5.1.primary.chrom_sizes.tsv")
+
+centromere_files <- c(
+  "Bcop" = "centromeres/Bcop.centromeres.bed",
+  "Bimp" = "centromeres/Bimp.centromeres.bed",
+  "Ling" = "centromeres/Ling.centromeres.bed")
+
+TE_files <- list(
+  "Bcop" = c(
+    "TEs_kimura_gff/idBraCopr2.filteredRepeats.autosomes.out.gff", 
+    "TEs_kimura_gff/idBraCopr2.filteredRepeats.chrX.out.gff",
+    "TEs_kimura_gff/idBraCopr2.filteredRepeats.GRC1.out.gff", 
+    "TEs_kimura_gff/idBraCopr2.filteredRepeats.GRC2.out.gff"),
+  
+  "Bimp" = c(
+    "TEs_kimura_gff/idBraImpa2.filteredRepeats.autosomes.out.gff", 
+    "TEs_kimura_gff/idBraImpa2.filteredRepeats.chrX.out.gff",
+    "TEs_kimura_gff/idBraImpa2.filteredRepeats.GRC.out.gff"),
+  
+  "Ling" = c(
+    "TEs_kimura_gff/idLyncInge5.filteredRepeats.autosomes.out.gff", 
+    "TEs_kimura_gff/idLyncInge5.filteredRepeats.chrX.out.gff",
+    "TEs_kimura_gff/idLyncInge5.filteredRepeats.GRC1.out.gff", 
+    "TEs_kimura_gff/idLyncInge5.filteredRepeats.GRC2.out.gff"))
+
+gene_annotation_files <- list(
+  "Bcop" = c("gene_annotations/bcop_core.gff3", 
+             "gene_annotations/bcop_grc.gff3"),
+  "Bimp" = c("gene_annotations/bimp_core.gff3",
+             "gene_annotations/bimp_grc.gff3"),
+  "Ling" = c("gene_annotations/ling_core.gff3",
+             "gene_annotations/ling_grc.gff3"))
 ################################################################################
 # Load files
 
 ### --- chromosome sizes --- ###
 sizes <- read_chrom_sizes(
-  #file = file.path(home, data, "chrom_sizes/idBraCopr2.1.chrom_sizes.tsv")) # bcop
-  #file = file.path(home, data, "chrom_sizes/idBraImpa2.1.primary.chrom_sizes.tsv")) # bimp
-  file = file.path(home, data, "chrom_sizes/idLycInge5.1.primary.chrom_sizes.tsv")) # bimp
-
+  file = file.path(home, data, chrom_sizes_files[[species]]))
 
 ### --- centromeres --- ###
 centromeres <- read.table(
-  #file = file.path(home, data, "centromeres/Bcop.centromeres.bed"),
-  #file = file.path(home, data, "centromeres/Bimp.centromeres.bed"),
-  file = file.path(home, data, "centromeres/Ling.centromeres.bed"),
+  file = file.path(home, data, centromere_files[[species]]),
   sep = "\t", header = FALSE, col.names = c("chrom", "centrStart", "centrEnd"))
 
 centromeres["centrMid"] <- 
   ((centromeres$centrEnd - centromeres$centrStart) / 2) + centromeres$centrStart
 
 ### --- transposable elements --- ###
-tes_dir <- file.path(home, data, "TEs_kimura_gff")
-TE_files <- c(
-  
-  # bcop
-  #"idBraCopr2.filteredRepeats.autosomes.out.gff", "idBraCopr2.filteredRepeats.chrX.out.gff",
-  #"idBraCopr2.filteredRepeats.GRC1.out.gff", "idBraCopr2.filteredRepeats.GRC2.out.gff")
-  
-  # bimp
-  #"idBraImpa2.filteredRepeats.autosomes.out.gff", "idBraImpa2.filteredRepeats.chrX.out.gff",
-  #"idBraImpa2.filteredRepeats.GRC.out.gff")
-  
-  # ling
-  "idLyncInge5.filteredRepeats.autosomes.out.gff", "idLyncInge5.filteredRepeats.chrX.out.gff",
-  "idLyncInge5.filteredRepeats.GRC1.out.gff", "idLyncInge5.filteredRepeats.GRC2.out.gff")
-
 div_tes_all <-  do.call(
-  "rbind", lapply(file.path(tes_dir, TE_files), read_and_process_te_gffs))
+  "rbind", lapply(file.path(home, data, TE_files[[species]]), read_and_process_te_gffs))
 
 ### --- genes --- ###
-gene_dir <- file.path(home, data, "gene_annotations")
-gene_files <- c(
-  #"bcop_core.gff3", "bcop_grc.gff3") # bcop
-  #"bimp_core.gff3", "bimp_grc.gff3") # bimp
-  "ling_core.gff3", "ling_grc.gff3") # ling
-
 genes <- do.call(
-  "rbind", lapply(file.path(gene_dir, gene_files), read_and_process_gene_gffs, chroms = sizes$chrom))
+  "rbind", lapply(file.path(home, data, gene_annotation_files[[species]]), 
+                  read_and_process_gene_gffs, chroms = sizes$chrom))
 
 ################################################################################
 # Process files
@@ -200,19 +213,14 @@ feature_cov_small <- rbind(feature_cov$tes, feature_cov$genes) %>%
 # infer the order of plotting
 feature_cov_small$chrom <- factor(
   feature_cov_small$chrom, 
-  levels = c("SUPER_1",
-             "SUPER_2",
-             "SUPER_3",
-             "SUPER_X",
-             "SUPER_GRC1",
-             "SUPER_GRC2"))
-             #"SUPER_GRC"))
+  levels = c("SUPER_1", "SUPER_2", "SUPER_3", "SUPER_X",
+             "SUPER_GRC1", "SUPER_GRC2",
+             "SUPER_GRC"))
 
 features_colour <- c("genes" = "#4c5a79", "TEs" = "grey25")
 
 # plot as lines
 plt_lines <- feature_cov_small %>%
-  #filter(chrom %in% c("SUPER_1", "SUPER_GRC1", "SUPER_GRC2")) %>%
   ggplot(aes(x = .win_id / 100, y = .frac * 100, col = feature)) +
   geom_point(alpha = 0.2, size = 0.3) +
   geom_smooth(span = 0.5, se = TRUE, aes(group=feature, col = feature, fill = feature)) +
@@ -224,19 +232,14 @@ plt_lines <- feature_cov_small %>%
   scale_x_continuous(labels = label_number(accuracy = 0.1)) + 
   ylim(0,60) +
   #facet_wrap(.~chrom, strip.position = "left", ncol = 1) + # chrom-scale
-  facet_wrap(.~chrom, scales = "free_x", strip.position = "left", ncol = 1) + # arm-scale
-  #ggtitle("Bradysia comprophila") +
-  #ggtitle("Bradysia impatiens") +
-  ggtitle("Lycoriella ingenua") +
+  facet_wrap(.~chrom, scales = "free_x", nrow = 1) + # arm-scale
+  ggtitle(species) +
   theme_bw()
 
-ggsave(file.path(home, figures,
-                 #"Bcop_chrom_organization_lines_vertical.png"),
-                 #"Bimp_chrom_organization_lines_vertical.png"),
-                 "Ling_chrom_organization_lines_vertical.png"),
-       plt_lines, width = 5, height = 10)
-ggsave(file.path(home, figures, 
-                 #"Bcop_chrom_organization_lines_vertical.svg"),
-                 #"Bimp_chrom_organization_lines_vertical.svg"),
-                 "Ling_chrom_organization_lines_vertical.svg"),
-       plt_lines, width = 5, height = 10)
+ggsave(
+  file = file.path(home, figures, paste0(species, "_chrom_organization_lines_vertical.png")),
+  plot = plt_lines, width = 25, height = 4)
+
+ggsave(
+  file = file.path(home, figures, paste0(species, "_chrom_organization_lines_vertical.svg")),
+  plot = plt_lines, width = 25, height = 4)
