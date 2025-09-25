@@ -106,7 +106,7 @@ prepare_linear_coordinates <- function(ali, t_sp, q_sp, chrom_list){
   }
   
   ali_lin_both <- ali_lin_both %>% arrange(target, t_linear_start) %>%
-    select(target, t_linear_start, t_linear_end, t_species, t_chrom_size,
+    select(target, t_linear_start, t_linear_end, t_species, t_chrom_size, t_string,
            query, q_linear_start, q_linear_end, q_species, q_chrom_size)
   
   return(ali_lin_both)
@@ -167,10 +167,10 @@ data <- "data"
 figures <- "figures"
 
 target_species <- "Bcop"
-target_chrom2plot <- c("SUPER_GRC1")
+target_chrom2plot <- c("SUPER_GRC2")
 
 query_species <- "Bcop"
-query_chrom2plot <- c("SUPER_GRC2")
+query_chrom2plot <- c("SUPER_GRC1")
 
 chrom_files <- c("idBraCopr2.1.chrom_sizes.tsv",
                  "idBraImpa2.1.primary.chrom_sizes.tsv",
@@ -199,8 +199,15 @@ ali_lin <- prepare_linear_coordinates(
   ali = ali, t_sp = target_species, q_sp = query_species, chrom_list = chrom_list)
 
 ### --- plotting --- ###
-p <- ggplot(ali_lin)  +
-  aes(x = t_linear_start, y = q_linear_start, xend = t_linear_end, yend = q_linear_end)
+p <- ggplot(data.frame(
+  start = ali_lin$t_linear_start,
+  end = ali_lin$t_linear_end,
+  strand = ali_lin$t_string,
+  query.start = ifelse(ali_lin$t_string == "+", ali_lin$q_linear_start, ali_lin$q_linear_end),
+  query.end = ifelse(ali_lin$t_string == "+", ali_lin$q_linear_end,   ali_lin$q_linear_start)
+  )) +
+  
+  aes(x = start, y = query.start, xend = end, yend = query.end)
 
 p <- p + geom_segment(lineend = "round", linewidth = 0.4) +
   labs(x = NULL, y = NULL) +
@@ -350,6 +357,10 @@ for(i in chr_info_q$query){
     xmin = -3000000, xmax = -1000, 
     colour = "black", fill = NA, linewidth = 0.3)
 }
+
+p <- p + geom_rect(ymin = 62238572, ymax = 65536885,
+                   xmin = 39621005, xmax = 42010912, x = NULL, y = NULL, 
+                   colour = "red", fill = NA, linewidth = 0.3)
 
 plt_file_name <- paste0(target_species, "2", 
                         query_species, ".dotplot_with_buscos")
