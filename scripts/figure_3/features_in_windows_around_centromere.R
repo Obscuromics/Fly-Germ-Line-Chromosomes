@@ -119,7 +119,10 @@ home <- getwd()
 data <- "data"
 figures <- "figures"
 
-species <- "Ling"
+species <- 
+  #"Bcop"
+  #"Bimp"
+  "Ling"
 ################################################################################
 chrom_sizes_files <- c(
   "Bcop" = "chrom_sizes/idBraCopr2.1.chrom_sizes.tsv",
