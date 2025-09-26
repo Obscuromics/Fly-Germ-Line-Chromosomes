@@ -11,9 +11,10 @@ load_paf_file <- function(file, t_chroms = NULL, t_ranges = NULL, t_sp = NULL,
                           q_chroms = NULL, q_ranges = NULL, q_sp = NULL){
   
   # read file
-  ali <- read.table(file = file, header = FALSE)[,c(1:9)]
+  ali <- read.table(file = file, header = FALSE)[,c(1:12)]
   colnames(ali) <- c("target", "t_length", "t_start", "t_end", "t_string",
-                     "query", "q_length", "q_start", "q_end")
+                     "query", "q_length", "q_start", "q_end",
+                     "n_matches", "n_bases", "score")
   
   # filter target chromosomes
   if(!is.null(t_chroms)){
@@ -361,6 +362,10 @@ for(i in chr_info_q$query){
 p <- p + geom_rect(ymin = 62238572, ymax = 65536885,
                    xmin = 39621005, xmax = 42010912, x = NULL, y = NULL, 
                    colour = "red", fill = NA, linewidth = 0.3)
+
+x <- ali %>% 
+  filter(t_start >= 39621005 & t_end <= 42010912) %>%
+  filter(q_start >= 62238572 & q_end <= 65536885)
 
 plt_file_name <- paste0(target_species, "2", 
                         query_species, ".dotplot_with_buscos")
