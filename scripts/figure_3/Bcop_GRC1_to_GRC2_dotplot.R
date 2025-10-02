@@ -359,13 +359,9 @@ for(i in chr_info_q$query){
     colour = "black", fill = NA, linewidth = 0.3)
 }
 
-p <- p + geom_rect(ymin = 62238572, ymax = 65536885,
-                   xmin = 39621005, xmax = 42010912, x = NULL, y = NULL, 
+p <- p + geom_rect(xmin = 39192040, xmax = 42263740,
+                   ymin = 62068860, ymax = 65694342, 
                    colour = "red", fill = NA, linewidth = 0.3)
-
-x <- ali %>% 
-  filter(t_start >= 39621005 & t_end <= 42010912) %>%
-  filter(q_start >= 62238572 & q_end <= 65536885)
 
 plt_file_name <- paste0(target_species, "2", 
                         query_species, ".dotplot_with_buscos")
@@ -374,4 +370,43 @@ ggsave(plot = p , filename = file.path(home, figures, paste0(plt_file_name, ".sv
        device = "svg")#, units = "cm", width = 7, height = 4)
 
 ggsave(plot = p , filename = file.path(home, figures, paste0(plt_file_name, ".png")), 
+       device = "png")#, units = "cm", width = 100, height = 40)
+
+################################################################################
+# zoom in to teh synteny block
+# synteny block stats
+sb <- ali %>% 
+  filter(t_start >= 39192040 & t_end <= 42263740) %>%
+  filter(q_start >= 62068860 & q_end <= 65694342)
+
+print(paste0("Number of alignments: ", nrow(sb)))
+print(paste0("Alignmnt length: ", sum(sb$n_bases)/1000000, " (Mbp)"))
+print(paste0("Identity: ", round(sum(sb$n_matches)/sum(sb$n_bases) * 100, 2), "%"))
+
+### --- plot the synteny block --- ###
+p_zoom <- ggplot(data.frame(
+  start = sb$t_start,
+  end = sb$t_end,
+  strand = sb$t_string,
+  query.start = ifelse(sb$t_string == "+", sb$q_start, sb$q_end),
+  query.end = ifelse(sb$t_string == "+", sb$q_end, sb$q_start)
+)) +
+  
+  aes(x = start/1000, y = query.start/1000, xend = end/1000, yend = query.end/1000)
+
+p_zoom <- p_zoom + geom_segment(lineend = "round", linewidth = 0.4) +
+  labs(x = paste0(unique(sb$target), " (Kbp)"), 
+       y = paste0(unique(sb$query), " (Kbp)")) +
+  theme_bw() +
+  coord_fixed()
+
+plt_zoom_file_name <- paste0(target_species, "2", 
+                             query_species, ".dotplot_zoomed")
+
+ggsave(plot = p_zoom, 
+       filename = file.path(home, figures, paste0(plt_zoom_file_name, ".svg")), 
+       device = "svg")#, units = "cm", width = 7, height = 4)
+
+ggsave(plot = p_zoom, 
+       filename = file.path(home, figures, paste0(plt_zoom_file_name, ".png")), 
        device = "png")#, units = "cm", width = 100, height = 40)
