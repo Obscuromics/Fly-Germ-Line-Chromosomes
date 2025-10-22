@@ -186,19 +186,19 @@ ggsave(
   plot = p2, width = 10, height = 3.5)
 ################################################################################
 # synteny blocks between the short arm of the chrX and both GRCs
-alignment_file <- file.path(home, data, "alignments/Bcop_Bcop.m.1aln.paf")
+alignment_file <- file.path(home, data, "alignments/Bcop_Bcop.1aln.paf")
 
 # synteny blocks to plot
 sbs <- list(
   
   "X_GRC1" = list("target" = "SUPER_X", 
                    "query" = "SUPER_GRC1", 
-                   t_coord = c(66330842, 66346636), 
-                   q_coord = c(2259413, 2271895)),
+                   t_coord = c(66331842-1000, 66345636+1000), 
+                   q_coord = c(2260413-1000, 2275104+1000)),
   "X_GRC2" = list("target" = "SUPER_X", 
                    "query" = "SUPER_GRC2", 
-                   t_coord = c(66330842, 66346636),
-                   q_coord = c(43355409, 43367882))
+                   t_coord = c(66331837-1000, 66345636+1000),
+                   q_coord = c(43356409-1000, 43366882+1000))
 )
 
 for(i in names(sbs)){

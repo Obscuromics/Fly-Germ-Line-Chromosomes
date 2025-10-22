@@ -246,6 +246,14 @@ p <- p +
   coord_fixed()
 
 p <- p + expand_limits(x = 0, y = 0) # force to plot from 0
+
+p <- p + geom_rect(xmin = 18151504, xmax = 33052853,
+                   ymin = 18381058, ymax = 34896639, 
+                   colour = "red", fill = NA, linewidth = 0.3)
+
+p <- p + geom_rect(xmin = 51176802, xmax = 62002594,
+                   ymin = 8205701, ymax = 18049120, 
+                   colour = "red", fill = NA, linewidth = 0.3)
 ################################################################################
 # add chromosome coloured based on origin
 origin <- read.table(
