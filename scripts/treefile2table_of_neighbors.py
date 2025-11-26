@@ -25,6 +25,9 @@ def is_monophyletic_cecidomyiidae(clade):
 def tip2sp_name(tip):
     return(tip.name.split('_')[0])
 
+def tip2type_name(tip):
+    return(tip.name.split('_')[1])
+
 def tip2gene(tip):
     return("_".join(tip.name.split('_')[-1:]).rstrip("'"))
 
@@ -32,12 +35,13 @@ def print_assignment_group(tree_name, subtree, assignment):
     for tip in subtree:
         if 'grc' in tip.name: # failing with OG0001314
             sp = tip2sp_name(tip)
+            genetype = tip2type_name(tip)
             gene = tip2gene(tip)
             branch_length = str(tip.branch_length)
-            sys.stdout.write("\t".join([tree_name, sp, gene, assignment, branch_length]) + '\n')
+            sys.stdout.write("\t".join([tree_name, sp, genetype, gene, assignment, branch_length]) + '\n')
 
 def print_no_assignment_orthogroup(tree_name):
-    sys.stdout.write("\t".join([tree_name, 'NA', 'NA', 'other', 'NA']) + '\n')            
+    sys.stdout.write("\t".join([tree_name, 'NA', 'NA', 'NA','other', 'NA']) + '\n')            
 
 def find_family_splitting_clade(node_to_test, tree_name):
     if is_just_grcs(node_to_test.clades[0]): # if all in one branch are just GRC genes
@@ -65,17 +69,17 @@ def tree2assigments(input_newick):
 
     if not sp2node_name[outgroup]:
         sys.stderr.write(tree_name + ': Outgroup (' + outgroup + ') absent\n')
-        sys.stdout.write("\t".join([tree_name, 'NA', 'NA', 'other', 'NA']) + '\n')
+        sys.stdout.write("\t".join([tree_name, 'NA', 'NA','NA', 'other', 'NA']) + '\n')
         return(0)
     
     if len(sp2node_name['sciaridae']) == 0:
         sys.stderr.write(tree_name + ': No sciaridae\n')
-        sys.stdout.write("\t".join([tree_name, 'NA', 'NA', 'other', 'NA']) + '\n')
+        sys.stdout.write("\t".join([tree_name, 'NA', 'NA','NA', 'other', 'NA']) + '\n')
         return(0)
         
     if len(sp2node_name['cecidomyiidae']) == 0:
         sys.stderr.write(tree_name + ': No cecidomyiidae\n')
-        sys.stdout.write("\t".join([tree_name, 'NA', 'NA', 'other', 'NA']) + '\n')
+        sys.stdout.write("\t".join([tree_name, 'NA', 'NA', 'NA', 'other', 'NA']) + '\n')
         return(0)
     
     outgroup_node = sp2node_name[outgroup][0]
@@ -116,23 +120,35 @@ def tree2assigments(input_newick):
 
 
 # input_dir = sys.argv[1]
-# input_dir = 'data/testing_trees'
+# input_dir = '/data/tol/teams/jaron/lustre/users/ch34/three_genomes/core_grc_paralogs/data/ortholog_classification/sco_trees/'
+# OG0000897 - looks indeed messy
+# OG0002291 - Should be monophyletic?!
+# OG0000062
+# OG0002359
+# OG0000401
+input_dir = 'data/testing_trees_orthofinder/'
+
 # tree_files = [i for i in os.listdir(input_dir) if i.endswith('treefile')]
-# tree_files = os.listdir('data/testing_trees/')
-# tree_files = os.listdir(input_dir)
-input_tree = sys.argv[1]
+tree_files = os.listdir(input_dir)
+#input_tree = sys.argv[1]
 
 # with open('tables/L-busco-phylogenies-summary.tsv', 'w') as tab:
-sys.stdout.write('orthogroup\tspecies\tgene\tclassification\tbranch_lengths\n')
+sys.stdout.write('orthogroup\tspecies\tgenetype\tgene\tclassification\tbranch_lengths\n')
 
-#for file in tree_files:
+for file in tree_files:
     #sys.stdout.write(file)
     #sys.stdout.write("\n")
     # file = 'OG0003003_tree.txt'
     # print(file)
-    # input_newick = input_dir + '/' + file
-input_newick = input_tree
-tree2assigments(input_newick)
-    # sys.stdout.write(gene + '\t' + tree2assigments(input_newick) + '\n')
+    
+    try:
+        input_newick = input_dir + '/' + file
+        #input_newick = input_tree
+        tree = Phylo.read(input_newick, "newick")
+        Phylo.draw(tree)
+        tree2assigments(input_newick)
+        # sys.stdout.write(gene + '\t' + tree2assigments(input_newick) + '\n')
+    except IndexError:
+        print(input_newick + ": failed to be processed")
 
 
