@@ -161,43 +161,43 @@ read_busco_file <- function(file_name, species, buscos_to_origin, chrom_list){
   return(df)
 }
 
-# read raw TRASH file
-read_trash_raw_file <- function(file){
-  satellites <- read.csv(file, header = TRUE)[,c(1,2,3,8)]
-  colnames(satellites) <- c("start", "end", "rep", "chrom")
-  satellites <- satellites %>% relocate(chrom, .before = start)
-  return(satellites)
-}
+teal <- rgb(76, 206, 175, maxColorValue = 255)
+magenta <- rgb(206, 142, 218, maxColorValue = 255)
 ################################################################################
+
+### PARAMETERS TO CHANGE ###
+
 #setwd("/Users/ab66/Documents/sanger_work/diptera/analysis_on_curated_genomes")
 home <- getwd()
 data <- "data"
 figures <- "figures"
 
-teal <- rgb(76, 206, 175, maxColorValue = 255)
-magenta <- rgb(206, 142, 218, maxColorValue = 255)
+target_species <- "Aaph"
+target_chrom2plot <- c("CM059996.1", "CM059997.1",
+                       "CM059998.1", "CM059999.1")
 
-target_species <- "Bimp"
-target_chrom2plot <- c("SUPER_1", "SUPER_2", "SUPER_3", "SUPER_X")
-
-query_species <- "Bimp"
-query_chrom2plot <- c("SUPER_GRC")
+query_species <- "Ling" # choose from the three species - Bcop, Bimp or Ling
+query_chrom2plot <- c("SUPER_GRC1", "SUPER_GRC2") # change to what chromosomes to plot
 
 chrom_files <- c("idBraCopr2.1.chrom_sizes.tsv",
                  "idBraImpa2.1.primary.chrom_sizes.tsv",
-                 "idLycInge5.1.primary.chrom_sizes.tsv")
+                 "idLycInge5.1.primary.chrom_sizes.tsv",
+                 "GCA_030463065.1_ASM3046306v1_genomic.chrom_sizes.tsv")
 
 chrom_list <- file.path(home, data, "chrom_sizes", chrom_files)
-names(chrom_list) <- c("Bcop", "Bimp", "Ling")
+names(chrom_list) <- c("Bcop", "Bimp", "Ling", "Aaph")
 
 busco_files <- c("BraCopr_buscos.diptera_odb12.tsv",
                  "BraImpa_buscos.diptera_odb12.tsv",
-                 "LycInge_buscos.diptera_odb12.tsv")
+                 "LycInge_buscos.diptera_odb12.tsv",
+                 "GCA_030463065.1_ASM3046306v1_genomic.chrom_sizes.tsv")
 
 busco_list <- file.path(home, data, "buscos", busco_files)
 names(busco_list) <- c("Bcop", "Bimp", "Ling")
 
-alignment_file <- "alignments/Bimp_Bimp.m.1aln.paf"
+alignment_file <- "alignments/Aaph_Ling.1aln.paf" # change to correct alignmnt file
+linewidth <- 0.4 # change to make dots thicker
+add_busco_origin <- TRUE # change to FALSE for the core chromosomes
 ################################################################################
 ### --- load paf alignment --- ###
 ali <- load_paf_file(
@@ -213,7 +213,7 @@ ali_lin <- prepare_linear_coordinates(
 p <- ggplot(ali_lin)  +
   aes(x = t_linear_start, y = q_linear_start, xend = t_linear_end, yend = q_linear_end)
 
-p <- p + geom_segment(lineend = "round", linewidth = 0.4) +
+p <- p + geom_segment(lineend = "round", linewidth = linewidth) +
   labs(x = NULL, y = NULL) +
   theme_bw()
 
@@ -254,92 +254,78 @@ p <- p +
   coord_fixed()
 
 p <- p + expand_limits(x = 0, y = 0) # force to plot from 0
+
+plt_file_name <- paste0(target_species, "2", 
+                        query_species, "_core.dotplot")
 ################################################################################
 # add chromosome coloured based on origin
-origin <- read.table(
-  file.path(home, data, "phylogeny/busco_grc_classification_odb12_diptera.tsv"),
-  sep = "\t", header = TRUE)[,c(0:5)]
-origin[c("sp", "chr")] <- str_split_fixed(origin$spchr, "_", 2)
-colnames(origin) <- c("busco", "spchr", "start", "end", "origin", "sp", "chr")
-
-buscos <- read_busco_file(
-  file_name = busco_list[[query_species]], species = query_species, 
-  buscos_to_origin = origin, chrom_list = chrom_list)
-
-# transform busco coordinates of the query to linear format
-q_buscos <- buscos %>%
-  filter(chrom %in% query_chrom2plot) %>%
-  arrange(chrom, start)
-
-chr_offset <- 0
-q_buscos_lin <- NULL
-
-for(i in unique(q_buscos$chrom)){
-  df <- q_buscos[q_buscos$chrom == i,]
-  size <- unique(df$chrom_size)
+if(isTRUE(add_busco_origin)){
+  origin <- read.table(
+    file.path(home, data, "phylogeny/busco_grc_classification_odb12_diptera.tsv"),
+    sep = "\t", header = TRUE)[,c(0:5)]
+  origin[c("sp", "chr")] <- str_split_fixed(origin$spchr, "_", 2)
+  colnames(origin) <- c("busco", "spchr", "start", "end", "origin", "sp", "chr")
   
-  # calculate linear coordinates
-  df$linear_start <- chr_offset + df$start
-  df$linear_end <- chr_offset + df$end
+  buscos <- list()
+  for(sp in c(query_species)){
+    buscos[[sp]] <- read_busco_file(
+      file_name = busco_list[[sp]], species = sp, 
+      buscos_to_origin = origin, chrom_list = chrom_list)
+  }
   
-  # bind with the main df
-  q_buscos_lin <- rbind(q_buscos_lin, df)
+  # transform busco coordinates of the query to linear format
+  q_buscos <- buscos[[query_species]] %>%
+    filter(chrom %in% query_chrom2plot) %>%
+    arrange(chrom, start)
   
-  # change chr offset
-  chr_offset <- chr_offset + size
+  chr_offset <- 0
+  q_buscos_lin <- NULL
+  
+  for(i in unique(q_buscos$chrom)){
+    df <- q_buscos[q_buscos$chrom == i,]
+    size <- unique(df$chrom_size)
+    
+    # calculate linear coordinates
+    df$linear_start <- chr_offset + df$start
+    df$linear_end <- chr_offset + df$end
+    
+    # bind with the main df
+    q_buscos_lin <- rbind(q_buscos_lin, df)
+    
+    # change chr offset
+    chr_offset <- chr_offset + size
+  }
+  
+  ### -- plotting buscos with origin --- ###
+  # query
+  if(nrow(chr_info_q) == 1){
+    chr_info_q$cum_start <- 0
+  }else{
+    chr_info_q$cum_start <- c(0, chr_info_q$cum_end[1:nrow(chr_info_q)-1])
+  }
+  
+  for(i in chr_info_q$query){
+    df <- chr_info_q[chr_info_q$query == i,]
+    df_buscos <- q_buscos_lin[q_buscos_lin$chrom == i,]
+    
+    # plot buscos
+    p <- p + annotate(
+      "rect", ymin = df_buscos$linear_start, ymax = df_buscos$linear_end,
+      xmin = -3000000, xmax = -1000, 
+      colour = df_buscos$colour, fill = df_buscos$colour, linewidth = 0.3)
+    
+    p <- p + annotate(
+      "rect", ymin = df$cum_start, ymax = df$cum_end,
+      xmin = -3000000, xmax = -1000, 
+      colour = "black", fill = NA, linewidth = 0.3)
+  }
+  
+  plt_file_name <- paste0(target_species, "2", 
+                          query_species, "_GRCs.dotplot_with_buscos")
 }
-
-### -- plotting buscos with origin --- ###
-if(nrow(chr_info_q) == 1){
-  chr_info_q$cum_start <- 0
-}else{
-  chr_info_q$cum_start <- c(0, chr_info_q$cum_end[1:nrow(chr_info_q)-1])
-}
-
-for(i in chr_info_q$query){
-  df <- chr_info_q[chr_info_q$query == i,]
-  df_buscos <- q_buscos_lin[q_buscos_lin$chrom == i,]
-  
-  # plot buscos
-  p <- p + annotate(
-    "rect", ymin = df_buscos$linear_start, ymax = df_buscos$linear_end,
-    xmin = -7000000, xmax = -1000, 
-    colour = df_buscos$colour, fill = df_buscos$colour, linewidth = 0.3)
-  
-  p <- p + annotate(
-    "rect", ymin = df$cum_start, ymax = df$cum_end,
-    xmin = -7000000, xmax = -1000, 
-    colour = "black", fill = NA, linewidth = 0.3)
-}
-
-# add satellites to the plot
-satellites <- read_trash_raw_file(
-  file = file.path(home, data, "trash_satellites/all.repeats.from.bimp.fa.csv"))
-satellites <- satellites %>%
-  filter(chrom == "SUPER_GRC") %>%
-  filter(rep %in% satellite_rep_to_plot)
-
-satellites <- left_join(satellites, data.frame(
-  "rep" = c(156, 222, 234),
-  "col" = c("#8cc49f", "#efa714", "#cd8a00")))
-
-p <- p + 
-  annotate(
-    "rect", xmin = 288000000, xmax = 288000000 + 7000000 - 1000,
-    ymin = satellites$start, ymax = satellites$end,
-    colour = satellites$col, fill = satellites$col, linewidth = 0.3) +
-  
-  annotate(
-    "rect", xmin = 288000000, xmax = 288000000 + 7000000 - 1000,
-    ymin = df$cum_start, ymax = df$cum_end, 
-    colour = "black", fill = NA, linewidth = 0.3)
-################################################################################
-# save the plot
-plt_file_name <- paste0(target_species, "2", 
-                        query_species, ".dotplot_with_buscos")
 
 ggsave(plot = p , filename = file.path(home, figures, paste0(plt_file_name, ".svg")), 
        device = "svg")#, units = "cm", width = 7, height = 4)
 
-ggsave(plot = p , filename = file.path(home, figures, paste0(plt_file_name, ".png")), 
+ggsave(plot = p , filename = file.path(home, figures, paste0(plt_file_name, ".m.png")), 
        device = "png")#, units = "cm", width = 100, height = 40)
