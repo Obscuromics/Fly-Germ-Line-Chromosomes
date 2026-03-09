@@ -27,6 +27,9 @@ def is_monophyletic_cecidomyiidae(clade):
 def tip2sp_name(tip):
     return(tip.name.split('.')[0])
 
+def tip2gene_name(tip):
+    return(tip.name.split('.')[1])
+
 def tabulate_branches(og, outtable):
     dnfile = tree_path + og + '.dn.nwk'
     dsfile = tree_path + og + '.ds.nwk'
@@ -47,8 +50,10 @@ def tabulate_branches(og, outtable):
     # they ahve all the same index, so all I need to do is test individual nodes and print the table
     for idx, clade in enumerate(dsnodes):
         if clade.name:
+            gene = tip2gene_name(clade)
             clade.name = tip2sp_name(clade)
         else:
+            gene = ''
             clade.name = str(idx)
         asn = 'other'
         if is_monophyletic_cecidomyiidae(clade):
@@ -64,7 +69,7 @@ def tabulate_branches(og, outtable):
             type = 'tip'
         
         if dndsnodes[idx].branch_length != None and dnnodes[idx].branch_length != None and clade.branch_length != None:
-            outtable.write("\t".join([og, asn, type, str(dnnodes[idx].branch_length), str(clade.branch_length), str(dndsnodes[idx].branch_length), clade.name]) + '\n')
+            outtable.write("\t".join([og, gene, asn, type, str(dnnodes[idx].branch_length), str(clade.branch_length), str(dndsnodes[idx].branch_length), clade.name]) + '\n')
     return 0
 
 # this was just for sanity checking if the dnds tree branch lengths are indeed ds/dn
@@ -109,7 +114,7 @@ all_files = os.listdir(tree_path)
 ogs_to_process = list(set([f.split('.')[0] for f in all_files]))
 
 with open('tables/DnDs_per_branch_summary.tsv', 'w') as tab:
-    tab.write('orthogroup\tasn\ttype\tdn\tds\tdnds\tspecies\n')
+    tab.write('orthogroup\tgene\tasn\ttype\tdn\tds\tdnds\tspecies\n')
     for og in ogs_to_process:
         #sys.stdout.write(file)
         #sys.stdout.write("\n")
