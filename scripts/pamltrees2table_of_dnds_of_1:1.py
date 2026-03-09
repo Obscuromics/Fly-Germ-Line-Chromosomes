@@ -4,6 +4,7 @@ import os
 # from collections import defaultdict
 # import numpy as np
 from Bio import Phylo # type: ignore
+import matplotlib.pyplot as plt
 import sys
 
 # species in the analysis
@@ -34,6 +35,37 @@ def tip2sp_name(tip):
 def tip2gene_name(tip):
     return(tip.name.split('.')[1])
 
+def plot_trees(tree1, tree2, tree3, filename=None, titles=None):
+
+    trees = [tree1, tree2, tree3]
+
+    if titles is None:
+        titles = ["Tree 1", "Tree 2", "Tree 3"]
+
+    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+
+    for ax, tree, title in zip(axes, trees, titles):
+
+        def branch_label(clade):
+            if clade.branch_length is not None:
+                return f"{clade.branch_length:.3f}"
+            return None
+
+        Phylo.draw(
+            tree,
+            axes=ax,
+            do_show=False,
+            branch_labels=branch_label
+        )
+
+        ax.set_title(title)
+
+    # plt.tight_layout()
+
+    if filename is not None:
+        plt.savefig(filename, bbox_inches="tight", dpi=300)
+
+    # plt.show()
 
 def tabulate_branches(og, outtable):
     dnfile = tree_path + og + '.dn.nwk'
@@ -45,11 +77,26 @@ def tabulate_branches(og, outtable):
     dndstree = Phylo.read(dndsfile, "newick")
 
     dmel_tips = [tip.name for tip in dntree.get_terminals() if "dmel" in tip.name]
-    dntree.root_with_outgroup(dmel_tips)
-    dmel_tips = [tip.name for tip in dstree.get_terminals() if "dmel" in tip.name]
-    dstree.root_with_outgroup(dmel_tips)
-    dmel_tips = [tip.name for tip in dndstree.get_terminals() if "dmel" in tip.name]
-    dndstree.root_with_outgroup(dmel_tips)
+    if len(dmel_tips) == 0:
+        sys.stderr.write("No dmel tip found in " + og + '\n')
+        return 0
+    if len(dmel_tips) == 1:
+        dntree.root_with_outgroup(dmel_tips[0])
+        dmel_tips = [tip.name for tip in dstree.get_terminals() if "dmel" in tip.name]
+        dstree.root_with_outgroup(dmel_tips[0])
+        dmel_tips = [tip.name for tip in dndstree.get_terminals() if "dmel" in tip.name]
+        dndstree.root_with_outgroup(dmel_tips[0])
+    else: 
+        mrca = dntree.common_ancestor(dmel_tips)
+        dntree.root_with_outgroup(mrca)
+        dmel_tips = [tip.name for tip in dstree.get_terminals() if "dmel" in tip.name]
+        mrca = dstree.common_ancestor(dmel_tips)
+        dstree.root_with_outgroup(mrca)
+        dmel_tips = [tip.name for tip in dndstree.get_terminals() if "dmel" in tip.name]
+        mrca = dndstree.common_ancestor(dmel_tips)
+        dndstree.root_with_outgroup(mrca)
+
+    # plot_trees(dntree, dstree, dndstree, filename='figures/DnDs_trees/python/' + og + '_trees.png', titles=['dN tree', 'dS tree', 'dN/dS tree'])
 
     # dsnodes = dstree.find_clades()
     # dnnodes = list(dntree.find_clades())
@@ -58,8 +105,10 @@ def tabulate_branches(og, outtable):
     all_tips = dndstree.get_terminals()
     tip_sp = [tip.name.split('.')[0] for tip in all_tips]
     
-    all_sciaridae_tips = [tip for tip in all_tips if tip.name.split('.')[0][0:4] in sciaridae]
-    sciaridae_ancestor = dndstree.common_ancestor(all_sciaridae_tips)
+    # all_sciaridae_tips = [tip for tip in all_tips if tip.name.split('.')[0][0:4] in sciaridae]
+    all_sciaridae_core_tips =  [tip for tip in all_tips if any([tip.name.startswith(sci) for sci in sciarid_core])]
+
+    sciaridae_ancestor = dndstree.common_ancestor(all_sciaridae_core_tips) #all_sciaridae_tips
 
     # tip_to_process = []
     for sp in ['bcop', 'bimp', 'ling']:
@@ -122,12 +171,18 @@ def tabulate_branches(og, outtable):
     return 0
 
 all_files = os.listdir(tree_path)
+# all_plots = os.listdir('figures/DnDs_trees/python/')
+
 ogs_to_process = list(set([f.split('.')[0] for f in all_files]))
+# ogs_to_skip = set([f.split('.')[0] for f in all_plots])
 
 with open('tables/DnDs_1to1_grc_core_orthologs.tsv', 'w') as tab:
     tab.write('orthogroup\tspecies\tcore_gene\tcore_dn\tcore_ds\tcore_dnds\tgrc_gene\tgrc_dn\tgrc_ds\tgrc_dnds\n')
     for og in ogs_to_process:
         # sys.stdout.write(og +'\n')
+        # if og in ogs_to_skip:
+        #     sys.stderr.write(og + ": already processed, skipping\n")
+        #     continue
         try:
             tabulate_branches(og, tab)
             sys.stderr.write(og + ": Done\n")
